@@ -37,48 +37,93 @@ def is_valid_neighbor(point, obstacles):
         bool: True if the point is a valid neighbor, False otherwise.
     """
     x, y,_ = point
-    if 0 <= x < width and 0 <= y < height and obstacle_map[y, x, 0] == 255:
+    if 0 <= x < width and 0 <= y < height and obstacle_map[int(y), int(x), 0] == 255:
         return True
     return False
 
-def get_neighbors(point, obstacles,step_size):
-    """
-    Returns a list of valid neighboring points along with their orientations relative to the current point.
-
-    Args:
-        point (tuple): The coordinates and orientation (x, y, theta) of the point.
-        obstacles (list): A list of coordinates representing obstacles.
-
-    Returns:
-        list: A list of tuples containing valid neighboring points and their orientations.
-
-    """
-    global print_interval
-    x, y, theta = point
+def get_neighbors(point, obstacles, UL = 5, UR = 10):
+    t = 0
+    r = 0.038
+    L = 0.354
+    dt = 0.1
     neighbors = []
-    angles = [60, 30, 0, -30, -60]
-    distance = step_size
-    for angle in angles:
-        # Calculate absolute angle for the neighbor
-        neighbor_angle = (theta + angle) % 360
-        # Convert angle from degrees to radians
-        angle_rad = math.radians(neighbor_angle)
-        # Calculate new neighbor coordinates
-        nx = x + (distance * math.cos(angle_rad))
-        ny = y + (distance * math.sin(angle_rad))
-        #print("nx: "+str(nx)+" ny: "+str(ny))
-        neighbor = (int(math.floor(nx)), int(math.floor(ny)), neighbor_angle)  # Round to nearest integer
-        if is_valid_neighbor(neighbor, obstacles):
-            cv2.line(obstacle_map, (x,y),(int(math.floor(nx)),int(math.floor(ny))),(0,0,255),1)
-            if print_interval%500==0:
-                cv2.imshow("Shortest Path", obstacle_map)
-                out.write(obstacle_map)
-                cv2.waitKey(1)
-            #print("neighbor: "+str(neighbor))   
-            print_interval=print_interval+1
+    Xi, Yi, Thetai = point
+    Xn=Xi
+    Yn=Yi
+    Thetan = 3.14 * Thetai / 180
+    actions=[[UL,UR], [UR,UL],[0,0],[UL,0],[UR,0],[0,UR],[0,UL], [UL,UL]]
 
+    # Xi, Yi,Thetai: Input point's coordinates
+    # Xs, Ys: Start point coordinates for plot function
+    # Xn, Yn, Thetan: End point coordintes
+    for action in actions:
+        UL = action[0]
+        UR = action[1]
+        D=0
+        Xs = Xn
+        Ys = Yn
+        while t<1:
+            t = t + dt
+
+            Delta_Xn = 0.5*r * (UL + UR) * math.cos(Thetan) * dt
+            Delta_Yn = 0.5*r * (UL + UR) * math.sin(Thetan) * dt
+            Thetan += (r / L) * (UR - UL) * dt
+
+            Xs+=Delta_Xn
+            Ys+=Delta_Yn
+
+        Thetan = 180 * (Thetan) / 3.14
+
+        neighbor = (Xs,Ys-1,Thetan)
+        print(neighbor)
+        if is_valid_neighbor(neighbor, obstacles):
+            print(neighbor)
+            cv2.circle(obstacle_map, (int(Xn),int(Yn)), 3,(120,244,255), -1 )
+            cv2.imshow("Shortest Path", obstacle_map)
+            cv2.waitKey(1)
             neighbors.append(neighbor)
+             
     return neighbors
+    
+  
+# def get_neighbors(point, obstacles):
+#     """
+#     Returns a list of valid neighboring points along with their orientations relative to the current point.
+
+#     Args:
+#         point (tuple): The coordinates and orientation (x, y, theta) of the point.
+#         obstacles (list): A list of coordinates representing obstacles.
+
+#     Returns:
+#         list: A list of tuples containing valid neighboring points and their orientations.
+
+#     """
+#     global print_interval
+#     x, y, theta = point
+#     neighbors = []
+#     angles = [60, 30, 0, -30, -60]
+#     distance = step_size
+#     for angle in angles:
+#         # Calculate absolute angle for the neighbor
+#         neighbor_angle = (theta + angle) % 360
+#         # Convert angle from degrees to radians
+#         angle_rad = math.radians(neighbor_angle)
+#         # Calculate new neighbor coordinates
+#         nx = x + (distance * math.cos(angle_rad))
+#         ny = y + (distance * math.sin(angle_rad))
+#         #print("nx: "+str(nx)+" ny: "+str(ny))
+#         neighbor = (int(math.floor(nx)), int(math.floor(ny)), neighbor_angle)  # Round to nearest integer
+#         if is_valid_neighbor(neighbor, obstacles):
+#             cv2.line(obstacle_map, (x,y),(int(math.floor(nx)),int(math.floor(ny))),(0,0,255),1)
+#             if print_interval%500==0:
+#                 cv2.imshow("Shortest Path", obstacle_map)
+#                 out.write(obstacle_map)
+#                 cv2.waitKey(1)
+#             #print("neighbor: "+str(neighbor))   
+#             print_interval=print_interval+1
+
+#             neighbors.append(neighbor)
+#     return neighbors
 # Function to ask for a point from the user
 
 
@@ -239,7 +284,7 @@ def ask_step_size():
             print("Invalid input. Please enter a number or press Enter for default.")
 
 
-def a_star(start, goal, obstacles, threshold, step_size):
+def a_star(start, goal, obstacles, threshold):
     """
     A* algorithm implementation to find the shortest path from start to goal.
 
@@ -265,13 +310,10 @@ def a_star(start, goal, obstacles, threshold, step_size):
         current_cost, current_node = frontier.get()
 
         if (current_node[0] > goal[0] - threshold and current_node[0] < goal[0] + threshold) and (current_node[1] > goal[1] - threshold and current_node[1] < goal[1] + threshold):
-            if current_node[2] == (360 - goal[2]):
-                print("Goal Threshold reached with correct orientation: " + "(" + str(current_node[0]) + "," + str(width - current_node[1]) + "," + str(360 - current_node[2]) + ")")
-                break
-            else:
-                flag += 1
+            
+            print("Goal Threshold reached")
 
-        for next_node in get_neighbors(current_node, obstacles, step_size):
+        for next_node in get_neighbors(current_node, obstacles):
             new_cost = cost_so_far[current_node] + distance_cost(current_node, next_node)
             new_cost_check = new_cost + heuristic(next_node, goal)
             
@@ -307,7 +349,7 @@ obstacle_map = np.ones((height, width, 3), dtype=np.uint8) * 255
 
 Robot_radius = ask_robot_radius()
 clearance = ask_clearence(Robot_radius)
-step_size= ask_step_size()
+# step_size= ask_step_size()
 
 
 
@@ -348,10 +390,10 @@ fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 # Save the obstacle map with the shortest path as a video
 out = cv2.VideoWriter('Shortest_Path.mp4', fourcc, 60.0, (width, height))
 
-threshold =int( (1.5*Robot_radius)+(step_size))
+threshold =int( (1.5*Robot_radius)+(10))
 cv2.circle(obstacle_map, (goal[0], goal[1]), threshold, (0, 0, 255), 1)  # Explored nodes in green
 # Find the shortest path using Dijkstra's algorithm
-shortest_path = a_star(start, goal, obstacles,threshold,step_size)
+shortest_path = a_star(start, goal, obstacles,threshold)
 
 
 # Mark the shortest path on the obstacle map
