@@ -18,7 +18,7 @@ def map_to_bottom_left(point):
     Returns:
     tuple: A tuple containing the x and y coordinates of the point mapped to the bottom left corner.
     """
-    height, width = 500, 1200
+    height, width = 400, 1200
     bottom_left_x = point[0]
     bottom_left_y = height - point[1]
     return (bottom_left_x, bottom_left_y)
@@ -103,14 +103,24 @@ def draw_obstacles(obstacle_map, obstacles):
     """
 
     for obstacle in obstacles:
-        color = obstacle.get('color', (0, 0, 0))  # Default color is black
-        thickness = obstacle.get('thickness', 1)  # Default thickness is 1
+        shape = obstacle.get('shape')
 
-        vertices = obstacle['vertices']
-        for i in range(len(vertices)):
-            draw_line(obstacle_map, map_to_bottom_left(vertices[i]), map_to_bottom_left(vertices[(i + 1) % len(vertices)]), color, thickness)
+        if shape == 'rectangle':
+            color = obstacle.get('color', (0, 0, 0))  # Default color is black
+            thickness = obstacle.get('thickness', 1)  # Default thickness is 1
+            vertices = obstacle['vertices']
+            for i in range(len(vertices)):
+                draw_line(obstacle_map, map_to_bottom_left(vertices[i]), map_to_bottom_left(vertices[(i + 1) % len(vertices)]), color, thickness)
 
-        cv2.fillPoly(obstacle_map, np.array([[map_to_bottom_left(point) for point in vertices]]), color)
+            cv2.fillPoly(obstacle_map, np.array([[map_to_bottom_left(point) for point in vertices]]), color)
+
+        if shape == 'circle':
+            vertices = obstacle['vertices']
+            center, radius = vertices[0], vertices[1]
+            color = obstacle.get('color', (0, 0, 0))  # Default color is black
+            thickness = obstacle.get('thickness', -1)  # Default thickness is 1
+
+            cv2.circle(obstacle_map, map_to_bottom_left(center), radius, color, thickness)
 
 
 # Function to calculate the Euclidean distance between two points
@@ -195,12 +205,12 @@ def ask_for_point(message, default=None):
         
         else:
             print("Point is invalid.")
-def ask_clearence(radius):
+def ask_clearence():
     print("Click ENTER for entering default value ")
     while True:
         user_input = input("Enter by how much the obstacles and map walls need to be bloated (default 5): ")
         if not user_input:  # If the user just clicks enter, use the default value
-            return 5
+            return 25
         try:
             clearance = int(user_input)
             if clearance > 0:
@@ -298,39 +308,37 @@ def a_star(start, goal, obstacles, threshold, step_size):
 
 # Define image dimensions
 width = 1200
-height = 500
+height = 400
 
 # Create a blank image filled with white
 obstacle_map = np.ones((height, width, 3), dtype=np.uint8) * 255
 
 
-
+clearance = ask_clearence()
+clearance=int(clearance/5)
 Robot_radius = ask_robot_radius()
-clearance = ask_clearence(Robot_radius)
 step_size= ask_step_size()
 
 
 
 print_interval=0
-clearance=clearance+Robot_radius
+
 
 obstacles = [
-    {'shape': 'rectangle', 'vertices': [(100-clearance, 100-clearance), (100-clearance, 500+clearance), (175+clearance, 500+clearance), (175+clearance, 100-clearance)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 2
-    {'shape': 'rectangle', 'vertices': [(100, 100), (100, 500), (175, 500), (175, 100)], 'color': (0, 0, 0), 'thickness': 1},  # Rectangle obstacle 2
-    {'shape': 'rectangle', 'vertices': [(275-clearance, 0), (275-clearance, 400+clearance), (350+clearance, 400+clearance), (350+clearance, 0)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 3
-    {'shape': 'rectangle', 'vertices': [(275, 0), (275, 400), (350, 400), (350, 0)], 'color': (0, 0, 0), 'thickness': 1},  # Rectangle obstacle 4
-    {'shape': 'hexagon', 'vertices': [(650, 400),(520, 325),(520, 175),(650, 100),(780, 175),(780, 325)], 'color': (128, 128, 128), 'thickness': clearance-1}, 
-    {'shape': 'hexagon', 'vertices': [(650, 395),(524, 323),(524, 178),(650, 105),(776, 177),(776, 322)], 'color': (0, 0, 0), 'thickness': 1},  # Hexagon obstacle
-    {'shape': 'rectangle', 'vertices': [(1025-clearance, 50-clearance), (1025-clearance, 450+clearance), (1100+clearance, 450+clearance), (1100+clearance, 50-clearance)], 'thickness': 1, 'color': (128, 128, 128)},  # Rectangle obstacle 5
-    {'shape': 'rectangle', 'vertices': [(900-clearance, 50-clearance), (900-clearance, 125+clearance), (1100+clearance, 125+clearance), (1100+clearance, 50-clearance)], 'thickness': 1, 'color': (128, 128, 128)},  # Rectangle obstacle 6
-    {'shape': 'rectangle', 'vertices': [(900, 50), (900, 125), (1100, 125), (1100, 50)], 'thickness': 1, 'color': (0, 0, 0)},  # Rectangle obstacle 7
-    {'shape': 'rectangle', 'vertices': [(900-clearance, 375-clearance), (900-clearance, 450+clearance), (1100+clearance, 450+clearance), (1100+clearance, 375-clearance)], 'thickness': 1, 'color': (128, 128, 128)},  # Rectangle obstacle 8
-    {'shape': 'rectangle', 'vertices': [(900, 375), (900, 450), (1100, 450), (1100, 375)], 'thickness': 1, 'color': (0, 0, 0)},  # Rectangle obstacle 9
-    {'shape': 'rectangle', 'vertices': [(1025, 50), (1025, 450), (1100, 450), (1100, 50)], 'thickness': 1, 'color': (0, 0, 0)},  # Rectangle obstacle 10
+    {'shape': 'rectangle', 'vertices': [(300-clearance, 200-clearance), (300-clearance, 400+clearance), (350+clearance, 400+clearance), (350+clearance, 200-clearance)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 2
+    {'shape': 'rectangle', 'vertices': [(300, 200), (300, 400), (350, 400), (350, 200)], 'color': (0, 0, 0), 'thickness': 1},  # Rectangle obstacle 2
+    {'shape': 'rectangle', 'vertices': [(500-clearance, 0), (500-clearance, 200+clearance), (550+clearance, 200+clearance), (550+clearance, 0)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 3
+    {'shape': 'rectangle', 'vertices': [(500, 0), (500, 200), (550, 200), (550, 0)], 'color': (0, 0, 0), 'thickness': 1},  # Rectangle obstacle 4
     {'shape': 'rectangle', 'vertices': [(0, 0), (0, clearance), (1200, clearance), (1200, 0)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 11
-    {'shape': 'rectangle', 'vertices': [(0, 0), (0, 500), (clearance, 500), (clearance, 0)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 12
-    {'shape': 'rectangle', 'vertices': [(1200-clearance, 0), (1200-clearance, 500), (1200, 500), (1200, 0)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 13
-    {'shape': 'rectangle', 'vertices': [(0, 500-clearance), (0, 500), (1200, 500), (1200, 500-clearance)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 14
+    {'shape': 'rectangle', 'vertices': [(0, 0), (0, 400), (clearance, 400), (clearance, 0)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 12
+    {'shape': 'rectangle', 'vertices': [(1200-clearance, 0), (1200-clearance, 400), (1200, 400), (1200, 0)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 13
+    {'shape': 'rectangle', 'vertices': [(0, 400-clearance), (0, 400), (1200, 400), (1200, 400-clearance)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 14
+    {'shape': 'circle', 'vertices': [(840, 240), 120+clearance], 'color': (128, 128, 128), 'thickness': -1},  # Rectangle obstacle 14
+
+    {'shape': 'circle', 'vertices': [(840, 240), 120], 'color': (0, 0, 0), 'thickness': -1},  # Rectangle obstacle 14
+
+   # {'shape': 'rectangle', 'vertices': [(0, 400-clearance), (0, 400), (1200, 400), (1200, 400-clearance)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 14
+
 ]
 
 # Draw obstacles on the obstacle map
@@ -345,6 +353,7 @@ cv2.circle(obstacle_map, (goal[0], goal[1]), 3, (0, 0, 255), -1)  # Explored nod
 
 
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+
 # Save the obstacle map with the shortest path as a video
 out = cv2.VideoWriter('Shortest_Path.mp4', fourcc, 60.0, (width, height))
 
