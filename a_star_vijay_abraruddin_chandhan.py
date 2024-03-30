@@ -18,14 +18,16 @@ def map_to_bottom_left(point):
     Returns:
     tuple: A tuple containing the x and y coordinates of the point mapped to the bottom left corner.
     """
-    height, width = 500, 1200
+    height, width = 400, 1200
     bottom_left_x = point[0]
     bottom_left_y = height - point[1]
     return (bottom_left_x, bottom_left_y)
 
 
 # Function to check if a point is a valid neighbor
-def is_valid_neighbor(point, obstacles):
+def is_valid_neighbor(point):
+    global Robot_radius
+    global clearance
     """
     Checks if a given point is a valid neighbor based on the obstacle map.
 
@@ -37,7 +39,20 @@ def is_valid_neighbor(point, obstacles):
         bool: True if the point is a valid neighbor, False otherwise.
     """
     x, y,_ = point
-    if 0 <= x < width and 0 <= y < height and obstacle_map[y, x, 0] == 255:
+   
+    x,y=map_to_bottom_left((x,y))
+    #print("x: "+str(x)+" y: "+str(y))
+    if clearance+Robot_radius <= x < width-clearance-Robot_radius and clearance+Robot_radius <= y < height-clearance-Robot_radius:
+        if y > (200-clearance-Robot_radius) and (x > (300-clearance-Robot_radius) and x < (350+clearance+Robot_radius)):
+           # print("2")
+            return False
+        elif y < (200+clearance+Robot_radius) and (x > (500-clearance-Robot_radius) and x < (550+clearance+Robot_radius)):
+            #print("3")
+            return False
+        elif (x - 840) ** 2 + (y - 240) ** 2 <= (120+clearance+Robot_radius) ** 2:
+           # print("4")
+            return False
+
         return True
     return False
 
@@ -68,9 +83,9 @@ def get_neighbors(point, obstacles,step_size):
         ny = y + (distance * math.sin(angle_rad))
         #print("nx: "+str(nx)+" ny: "+str(ny))
         neighbor = (int(math.floor(nx)), int(math.floor(ny)), neighbor_angle)  # Round to nearest integer
-        if is_valid_neighbor(neighbor, obstacles):
+        if is_valid_neighbor(neighbor):
             cv2.line(obstacle_map, (x,y),(int(math.floor(nx)),int(math.floor(ny))),(0,0,255),1)
-            if print_interval%500==0:
+            if print_interval%7000==0:
                 cv2.imshow("Shortest Path", obstacle_map)
                 out.write(obstacle_map)
                 cv2.waitKey(1)
@@ -103,14 +118,24 @@ def draw_obstacles(obstacle_map, obstacles):
     """
 
     for obstacle in obstacles:
-        color = obstacle.get('color', (0, 0, 0))  # Default color is black
-        thickness = obstacle.get('thickness', 1)  # Default thickness is 1
+        shape = obstacle.get('shape')
 
-        vertices = obstacle['vertices']
-        for i in range(len(vertices)):
-            draw_line(obstacle_map, map_to_bottom_left(vertices[i]), map_to_bottom_left(vertices[(i + 1) % len(vertices)]), color, thickness)
+        if shape == 'rectangle':
+            color = obstacle.get('color', (0, 0, 0))  # Default color is black
+            thickness = obstacle.get('thickness', 1)  # Default thickness is 1
+            vertices = obstacle['vertices']
+            for i in range(len(vertices)):
+                draw_line(obstacle_map, map_to_bottom_left(vertices[i]), map_to_bottom_left(vertices[(i + 1) % len(vertices)]), color, thickness)
 
-        cv2.fillPoly(obstacle_map, np.array([[map_to_bottom_left(point) for point in vertices]]), color)
+            cv2.fillPoly(obstacle_map, np.array([[map_to_bottom_left(point) for point in vertices]]), color)
+
+        if shape == 'circle':
+            vertices = obstacle['vertices']
+            center, radius = vertices[0], vertices[1]
+            color = obstacle.get('color', (0, 0, 0))  # Default color is black
+            thickness = obstacle.get('thickness', -1)  # Default thickness is 1
+
+            cv2.circle(obstacle_map, map_to_bottom_left(center), radius, color, thickness)
 
 
 # Function to calculate the Euclidean distance between two points
@@ -140,7 +165,7 @@ def heuristic(node, goal):
         float: The heuristic value between the current node and the goal node.
     """
     x1, y1, theta1 = node
-    x2, y2, theta2 = goal
+    x2, y2 = goal
  
     return euclidean_distance((x1, y1), (x2, y2))
 
@@ -161,7 +186,7 @@ def distance_cost(current, next):
 
     return euclidean_distance(current, next)
 
-def ask_for_point(message, default=None):
+def ask_for_start_point(message, default=None):
     """
     Asks the user to input a point and validates its validity based on the obstacle map.
 
@@ -188,19 +213,82 @@ def ask_for_point(message, default=None):
             x, y, theta = map(int, user_input.split(','))
             x, y = map_to_bottom_left((x, y))
 
-        if 0 <= x < width and 0 <= y < height and obstacle_map[y, x, 0] == 255 and theta%30==0 and theta%30 == 0:
+        if 0 <= x < width and 0 <= y < height and is_valid_neighbor((x,y,0)) and theta%30==0 and theta%30 == 0:
             return x, y,theta
         elif theta%30 !=0:
             print("Enter angle in multiples of 30 degrees")
         
         else:
             print("Point is invalid.")
-def ask_clearence(radius):
+
+# Function to ask for a point from the user
+def ask_for_goal_point(message, default=None):
+    """
+    Asks the user to input a point and validates its validity based on the obstacle map.
+
+    Args:
+        message (str): The message to display when asking for the point.
+        default (tuple, optional): The default point to use if the user does not provide any input. 
+                                   Defaults to None.
+
+    Returns:
+        tuple: The validated point (x, y).
+
+    Raises:
+        ValueError: If no default value is provided and the user does not provide any input.
+    """
+    while True:
+        user_input = input(f"{message} (default: {default[0]},{default[1]}): ")
+        if user_input.strip() == "":
+            if default is None:
+                raise ValueError("No default value provided.")
+            else:
+                x, y = default
+                x, y = map_to_bottom_left((x, y))
+        else:
+            x, y = map(int, user_input.split(','))
+            x, y = map_to_bottom_left((x, y))
+
+        if 0 <= x < width and 0 <= y < height and is_valid_neighbor((x,y,0)):
+            return x, y
+        else:
+            print("Point is invalid.")
+def ask_for_rpm(message, default=None):
+    """
+    Asks the user to input a point and validates its validity based on the obstacle map.
+
+    Args:
+        message (str): The message to display when asking for the point.
+        default (tuple, optional): The default point to use if the user does not provide any input. 
+                                   Defaults to None.
+
+    Returns:
+        tuple: The validated point (x, y).
+
+    Raises:
+        ValueError: If no default value is provided and the user does not provide any input.
+    """
+    while True:
+        user_input = input(f"{message} (default: {default[0]},{default[1]}): ")
+        if user_input.strip() == "":
+            if default is None:
+                raise ValueError("No default value provided.")
+            else:
+                rpm1, rpm2 = default
+        else:
+            rpm1, rpm2 = map(int, user_input.split(','))
+
+        if rpm1 > 0 and rpm2 > 0:
+            return rpm1, rpm2
+        else:
+            print("Enter positive values for RPMs.")
+
+def ask_clearence():
     print("Click ENTER for entering default value ")
     while True:
         user_input = input("Enter by how much the obstacles and map walls need to be bloated (default 5): ")
         if not user_input:  # If the user just clicks enter, use the default value
-            return 5
+            return 25
         try:
             clearance = int(user_input)
             if clearance > 0:
@@ -210,36 +298,10 @@ def ask_clearence(radius):
         except ValueError:
             print("Invalid input. Please enter a number or press Enter for default.")
 
-def ask_robot_radius():
-    while True:
-        user_input = input("Enter Robot Radius (default 5): ")
-        if not user_input:  # If the user just clicks enter, use the default value
-            return 5
-        try:
-            radius = int(user_input)
-            if radius > 0:
-                return radius
-            else:
-                print("Enter a positive value for radius")
-        except ValueError:
-            print("Invalid input. Please enter a number or press Enter for default.")
-
-def ask_step_size():
-    while True:
-        user_input = input("Enter Step Size (1 to 10, default 5): ")
-        if not user_input:  # If the user just clicks enter, use the default value
-            return 5
-        try:
-            step_size = int(user_input)
-            if 1 <= step_size <= 10:
-                return step_size
-            else:
-                print("Enter a value for Step Size in the range 1 to 10")
-        except ValueError:
-            print("Invalid input. Please enter a number or press Enter for default.")
 
 
-def a_star(start, goal, obstacles, threshold, step_size):
+
+def a_star(start, goal, obstacles, threshold):
     """
     A* algorithm implementation to find the shortest path from start to goal.
 
@@ -259,28 +321,23 @@ def a_star(start, goal, obstacles, threshold, step_size):
 
     cost_so_far = {start: 0}
     came_from = {start: None}
-    flag = 0
 
     while not frontier.empty():
         current_cost, current_node = frontier.get()
 
         if (current_node[0] > goal[0] - threshold and current_node[0] < goal[0] + threshold) and (current_node[1] > goal[1] - threshold and current_node[1] < goal[1] + threshold):
-            if current_node[2] == (360 - goal[2]):
-                print("Goal Threshold reached with correct orientation: " + "(" + str(current_node[0]) + "," + str(width - current_node[1]) + "," + str(360 - current_node[2]) + ")")
+                print("Goal Threshold reached orientation: " + "(" + str(current_node[0]) + "," + str(width - current_node[1]) + "," + str(360 - current_node[2]) + ")")
                 break
-            else:
-                flag += 1
 
-        for next_node in get_neighbors(current_node, obstacles, step_size):
+
+        for next_node in get_neighbors(current_node, obstacles, 10):
             new_cost = cost_so_far[current_node] + distance_cost(current_node, next_node)
             new_cost_check = new_cost + heuristic(next_node, goal)
             
             if next_node not in cost_so_far or new_cost_check < cost_so_far[next_node]:
                 cost_so_far[next_node] = new_cost
-                if flag >= 1:
-                    priority = flag
-                else:
-                    priority = round(new_cost + heuristic(next_node, goal), 3)  # A* uses f = g + h
+
+                priority = round(new_cost + heuristic(next_node, goal), 3)  # A* uses f = g + h
                 frontier.put((priority, next_node))
                 came_from[next_node] = current_node
 
@@ -298,60 +355,60 @@ def a_star(start, goal, obstacles, threshold, step_size):
 
 # Define image dimensions
 width = 1200
-height = 500
+height = 400
 
 # Create a blank image filled with white
 obstacle_map = np.ones((height, width, 3), dtype=np.uint8) * 255
 
 
-
-Robot_radius = ask_robot_radius()
-clearance = ask_clearence(Robot_radius)
-step_size= ask_step_size()
+clearance = ask_clearence()
+clearance=int(clearance/5)
+Robot_radius = 5
 
 
 
 print_interval=0
-clearance=clearance+Robot_radius
+
 
 obstacles = [
-    {'shape': 'rectangle', 'vertices': [(100-clearance, 100-clearance), (100-clearance, 500+clearance), (175+clearance, 500+clearance), (175+clearance, 100-clearance)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 2
-    {'shape': 'rectangle', 'vertices': [(100, 100), (100, 500), (175, 500), (175, 100)], 'color': (0, 0, 0), 'thickness': 1},  # Rectangle obstacle 2
-    {'shape': 'rectangle', 'vertices': [(275-clearance, 0), (275-clearance, 400+clearance), (350+clearance, 400+clearance), (350+clearance, 0)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 3
-    {'shape': 'rectangle', 'vertices': [(275, 0), (275, 400), (350, 400), (350, 0)], 'color': (0, 0, 0), 'thickness': 1},  # Rectangle obstacle 4
-    {'shape': 'hexagon', 'vertices': [(650, 400),(520, 325),(520, 175),(650, 100),(780, 175),(780, 325)], 'color': (128, 128, 128), 'thickness': clearance-1}, 
-    {'shape': 'hexagon', 'vertices': [(650, 395),(524, 323),(524, 178),(650, 105),(776, 177),(776, 322)], 'color': (0, 0, 0), 'thickness': 1},  # Hexagon obstacle
-    {'shape': 'rectangle', 'vertices': [(1025-clearance, 50-clearance), (1025-clearance, 450+clearance), (1100+clearance, 450+clearance), (1100+clearance, 50-clearance)], 'thickness': 1, 'color': (128, 128, 128)},  # Rectangle obstacle 5
-    {'shape': 'rectangle', 'vertices': [(900-clearance, 50-clearance), (900-clearance, 125+clearance), (1100+clearance, 125+clearance), (1100+clearance, 50-clearance)], 'thickness': 1, 'color': (128, 128, 128)},  # Rectangle obstacle 6
-    {'shape': 'rectangle', 'vertices': [(900, 50), (900, 125), (1100, 125), (1100, 50)], 'thickness': 1, 'color': (0, 0, 0)},  # Rectangle obstacle 7
-    {'shape': 'rectangle', 'vertices': [(900-clearance, 375-clearance), (900-clearance, 450+clearance), (1100+clearance, 450+clearance), (1100+clearance, 375-clearance)], 'thickness': 1, 'color': (128, 128, 128)},  # Rectangle obstacle 8
-    {'shape': 'rectangle', 'vertices': [(900, 375), (900, 450), (1100, 450), (1100, 375)], 'thickness': 1, 'color': (0, 0, 0)},  # Rectangle obstacle 9
-    {'shape': 'rectangle', 'vertices': [(1025, 50), (1025, 450), (1100, 450), (1100, 50)], 'thickness': 1, 'color': (0, 0, 0)},  # Rectangle obstacle 10
+    {'shape': 'rectangle', 'vertices': [(300-clearance, 200-clearance), (300-clearance, 400+clearance), (350+clearance, 400+clearance), (350+clearance, 200-clearance)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 2
+    {'shape': 'rectangle', 'vertices': [(300, 200), (300, 400), (350, 400), (350, 200)], 'color': (0, 0, 0), 'thickness': 1},  # Rectangle obstacle 2
+    {'shape': 'rectangle', 'vertices': [(500-clearance, 0), (500-clearance, 200+clearance), (550+clearance, 200+clearance), (550+clearance, 0)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 3
+    {'shape': 'rectangle', 'vertices': [(500, 0), (500, 200), (550, 200), (550, 0)], 'color': (0, 0, 0), 'thickness': 1},  # Rectangle obstacle 4
     {'shape': 'rectangle', 'vertices': [(0, 0), (0, clearance), (1200, clearance), (1200, 0)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 11
-    {'shape': 'rectangle', 'vertices': [(0, 0), (0, 500), (clearance, 500), (clearance, 0)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 12
-    {'shape': 'rectangle', 'vertices': [(1200-clearance, 0), (1200-clearance, 500), (1200, 500), (1200, 0)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 13
-    {'shape': 'rectangle', 'vertices': [(0, 500-clearance), (0, 500), (1200, 500), (1200, 500-clearance)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 14
+    {'shape': 'rectangle', 'vertices': [(0, 0), (0, 400), (clearance, 400), (clearance, 0)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 12
+    {'shape': 'rectangle', 'vertices': [(1200-clearance, 0), (1200-clearance, 400), (1200, 400), (1200, 0)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 13
+    {'shape': 'rectangle', 'vertices': [(0, 400-clearance), (0, 400), (1200, 400), (1200, 400-clearance)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 14
+    {'shape': 'circle', 'vertices': [(840, 240), 120+clearance], 'color': (128, 128, 128), 'thickness': -1},  # Rectangle obstacle 14
+
+    {'shape': 'circle', 'vertices': [(840, 240), 120], 'color': (0, 0, 0), 'thickness': -1},  # Rectangle obstacle 14
+
+   # {'shape': 'rectangle', 'vertices': [(0, 400-clearance), (0, 400), (1200, 400), (1200, 400-clearance)], 'color': (128, 128, 128), 'thickness': 1},  # Rectangle obstacle 14
+
 ]
 
 # Draw obstacles on the obstacle map
 draw_obstacles(obstacle_map, obstacles)
 
 # Ask for start and end points
-start = ask_for_point("Enter start point (x, y,theta): ", (50, 50,0))
-goal = ask_for_point("Enter goal point (x, y,theta): ", (1150, 50,30))
+start = ask_for_start_point("Enter start point (x, y,theta): ", (50, 50,0))
+goal = ask_for_goal_point("Enter goal point (x, y,theta): ", (1150, 50))
+
+rpm1,rpm2=ask_for_rpm("Enter RPM1 and RPM2 separated by comma: ", (50,50))
 cv2.circle(obstacle_map, (start[0], start[1]), 5, (255, 0, 0), -1)  # Explored nodes in green
 cv2.circle(obstacle_map, (goal[0], goal[1]), 3, (0, 0, 255), -1)  # Explored nodes in green
 
 
 
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+
 # Save the obstacle map with the shortest path as a video
 out = cv2.VideoWriter('Shortest_Path.mp4', fourcc, 60.0, (width, height))
 
-threshold =int( (1.5*Robot_radius)+(step_size))
+threshold =int( (1.5*Robot_radius))
 cv2.circle(obstacle_map, (goal[0], goal[1]), threshold, (0, 0, 255), 1)  # Explored nodes in green
 # Find the shortest path using Dijkstra's algorithm
-shortest_path = a_star(start, goal, obstacles,threshold,step_size)
+shortest_path = a_star(start, goal, obstacles,threshold)
 
 
 # Mark the shortest path on the obstacle map
