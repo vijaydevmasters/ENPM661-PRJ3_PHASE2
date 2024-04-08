@@ -1,0 +1,44 @@
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
+
+class VelocityPublisher(Node):
+    def __init__(self):
+        super().__init__('velocity_publisher')
+        self.publisher_ = self.create_publisher(Twist, '/cmd_vel', 10)
+        
+        self.linear_vel =  [((0.518, 0.0, 0.0), (0.518, -0.0)), ((0.66, 0.176, 1.806), (0.259, -1.806)), ((0.797, 0.354, 0.0), (0.259, 1.806)), ((1.316, 0.354, 0.0), (0.518, -0.0)), ((1.489, 0.354, 0.0), (0.173, -0.0)), ((1.63, 0.178, -1.806), (0.259, 1.806)), ((1.635, 0.093, -1.204), (0.086, -0.602)), ((1.697, -0.068, -1.204), (0.173, -0.0)), ((1.703, -0.153, -1.806), (0.086, 0.602)), ((1.841, -0.331, 0.0), (0.259, -1.806)), ((2.359, -0.331, 0.0), (0.518, -0.0)), ((2.628, -0.149, 1.204), (0.346, -1.204)), ((2.814, 0.335, 1.204), (0.518, -0.0)), ((3.081, 0.521, 0.0), (0.346, 1.204)), ((3.162, 0.546, 0.602), (0.086, -0.602)), ((3.305, 0.644, 0.602), (0.173, -0.0)), ((3.386, 0.669, 0.0), (0.086, 0.602)), ((3.559, 0.669, 0.0), (0.173, -0.0)), ((3.64, 0.694, 0.602), (0.086, -0.602)), ((3.721, 0.72, 0.0), (0.086, 0.602)), ((4.239, 0.72, 0.0), (0.518, -0.0)), ((4.758, 0.72, 0.0), (0.518, -0.0)), ((4.931, 0.72, 0.0), (0.173, -0.0)), ((5.012, 0.695, -0.602), (0.086, 0.602)), ((5.093, 0.669, 0.0), (0.086, -0.602)), ((5.175, 0.644, -0.602), (0.086, 0.602))]
+        
+        self.index = 0  # To keep track of the current position in the velocity lists
+        self.timer = self.create_timer(1.0, self.publish_velocity) 
+
+    def publish_velocity(self):
+        if self.index < len(self.linear_vel):
+            linear_velocity = self.linear_vel[self.index][0] 
+            angular_velocity = self.linear_vel[self.index][1]
+            
+            vel_msg = Twist()
+            vel_msg.linear.x = linear_velocity
+            vel_msg.angular.z = angular_velocity
+            self.publisher_.publish(vel_msg)
+            self.get_logger().info(f'Linear Vel = {linear_velocity}, Angular Vel = {angular_velocity}, index = {self.index}, len = {len(self.linear_vel)}')
+            
+            self.index += 1  
+        else:
+            self.get_logger().info('Completed publishing all velocities.')
+            vel_msg_stop = Twist()
+            vel_msg_stop.linear.x = 0.0
+            vel_msg_stop.angular.z = 0.0
+            self.publisher_.publish(vel_msg_stop)
+        
+
+def main(args=None):
+    rclpy.init(args=args)
+    velocity_publisher = VelocityPublisher()
+    rclpy.spin(velocity_publisher)
+    velocity_publisher.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
