@@ -34,12 +34,13 @@ This repository contains an implementation of the A* (A-star) search algorithm, 
 
 ## Usage
 
-1. Clone the repository or download the `a_star_vijay_abraruddin_chandhan.py.py` file.
-2. Install the required libraries using pip:
+1. Clone the repository or download the `proj3p2_vijay_abraruddin_chandhan_PART1.py` file.
+2. Clone the repository or download the `a_star_vijay_abraruddin_chandhan.py` file.
+3. Install the required libraries using pip:
    ```
    pip install opencv-python numpy
    ```
-3. Run the script part-1:
+4. Run the script part-1:
     ```
    proj3p2_vijay_abraruddin_chandhan_PART1.py
    ```
