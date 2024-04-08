@@ -95,7 +95,8 @@ In this example, the start point is at coordinates (500, 1000, 0) and the goal p
 - The visualization is done using the OpenCV library.
 
 ## Results
-![Video Demo](https://github.com/SYED-ABRARUDDIN/ENPM661_Project2/blob/main/obstacle_map_with_shortest_path.gif)
+![Video Demo](https://github.com/vijaydevmasters/ENPM661-PRJ3_PHASE2/blob/main/shortest_path_gif.gif)
+
 
 
 
