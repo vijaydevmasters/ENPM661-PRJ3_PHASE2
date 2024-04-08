@@ -34,8 +34,8 @@ This repository contains an implementation of the A* (A-star) search algorithm, 
 
 ## Usage
 
-1. Clone the repository or download the `proj3p2_vijay_abraruddin_chandhan_PART1.py` file.
-2. Clone the repository or download the `a_star_vijay_abraruddin_chandhan.py` file.
+1. Clone the repository or download the `proj3p2_vijay_abraruddin_chandhan_PART1.py` file for part-1.
+2. Clone the repository or download the `proj3p2_vijay_chandhan_abrar_PART2.py ` file for part-2.
 3. Install the required libraries using pip:
    ```
    pip install opencv-python numpy
@@ -57,7 +57,7 @@ This repository contains an implementation of the A* (A-star) search algorithm, 
     # launch competition_world
     ros2 launch turtlebot3_project3 competition_world.launch.py
     # run executable
-    
+    ros2 run turtlebot3_project3 proj3p2_vijay_chandhan_abrar_PART2.py 
    
    ```
 6. Follow the prompts to input the start and goal points.
