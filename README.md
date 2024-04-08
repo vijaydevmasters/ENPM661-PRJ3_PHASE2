@@ -1,7 +1,7 @@
 
 
 
-# A* Algorithm Implementation for Shortest Path ENPM661 PROJECT3 Part-1
+# A* Algorithm Implementation for Shortest Path ENPM661 PROJECT3 
 ### 
     Author 1: Abraruddin Syed UID: 120109997
     Author 2: Vijay Chevireddi UID: 119491485
@@ -11,13 +11,26 @@
 
 This repository contains an implementation of the A* (A-star) search algorithm, written by Vijay Abraruddin Chandhan. The A* algorithm is a popular choice for pathfinding and graph traversal, which is the process of finding a path between multiple points, called "nodes"
 
-## Prerequisites
+## Prerequisites for part-1
 
 - Python 3.x
 - OpenCV (cv2) library
 - NumPy library
 - Math library
 - PriorityQueue library
+
+## Prerequisites for part-2
+
+- Python 3.x
+- OpenCV (cv2) library
+- NumPy library
+- Math library
+- PriorityQueue library
+- rclpy
+- geometry_msgs.msg
+- time
+- nav_msgs.msg
+  
 
 ## Usage
 
@@ -26,11 +39,27 @@ This repository contains an implementation of the A* (A-star) search algorithm, 
    ```
    pip install opencv-python numpy
    ```
-3. Run the script:
+3. Run the script part-1:
+    ```
+   proj3p2_vijay_abraruddin_chandhan_PART1.py
    ```
-   proj3p2_vijay_abraruddin_chandhan.py
+5. Run the script part-2:
    ```
-4. Follow the prompts to input the start and goal points.
+    # Replace ".bash" with your shell if you're not using bash
+    # Possible values are: setup.bash, setup.sh, setup.zsh
+    source /opt/ros/galactic/setup.bash
+    export TURTLEBOT3_MODEL=waffle
+    # colcon build
+    colcon build
+    # source setup
+    source install/setup.bash
+    # launch competition_world
+    ros2 launch turtlebot3_project3 competition_world.launch.py
+    # run executable
+    
+   
+   ```
+6. Follow the prompts to input the start and goal points.
 
 ### Example Input
 
