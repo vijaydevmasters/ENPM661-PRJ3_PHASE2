@@ -1,7 +1,7 @@
 
 
 
-# A* Algorithm Implementation for Shortest Path ENPM661 PROJECT3
+# A* Algorithm Implementation for Shortest Path ENPM661 PROJECT3 Part-1
 ### 
     Author 1: Abraruddin Syed UID: 120109997
     Author 2: Vijay Chevireddi UID: 119491485
@@ -16,6 +16,8 @@ This repository contains an implementation of the A* (A-star) search algorithm, 
 - Python 3.x
 - OpenCV (cv2) library
 - NumPy library
+- Math library
+- PriorityQueue library
 
 ## Usage
 
@@ -26,7 +28,7 @@ This repository contains an implementation of the A* (A-star) search algorithm, 
    ```
 3. Run the script:
    ```
-   python a_star_vijay_abraruddin_chandhan.py
+   proj3p2_vijay_abraruddin_chandhan.py
    ```
 4. Follow the prompts to input the start and goal points.
 
@@ -35,17 +37,17 @@ This repository contains an implementation of the A* (A-star) search algorithm, 
 After running the script, you will be prompted to input the start and goal points. Here's an example of how you might provide this input:
 
 ```
-Click ENTER for entering default value
-Enter by how much the obstacles and map walls need to be bloated (default 5):
-Enter Robot Radius (default 5):
-Enter Step Size (1 to 10, default 5):
-Enter start point (x, y,theta):  (default: 50,50,0):
-Enter goal point (x, y,theta):  (default: 1150,50,30):
-Goal Threshold reached with correct orientation: (1147,745,30)
+
+Click ENTER for entering default value 
+Enter clearance in mm:  (default: 75):
+Enter start point (x, y,theta):  (default: 500,1000,0):
+Enter goal point (x, y,theta):  (default: 5700,1200):
+Enter RPM1 and RPM2 separated by comma:  (default: 50,100):
+Goal Threshold reached orientation: (1128.732,1038.74,103.48500000000001)
 
 ```
 
-In this example, the start point is at coordinates (50, 50, 0) and the goal point is at coordinates (1150, 50, 30). Please note that the coordinates should be within the dimensions of your obstacle map.
+In this example, the start point is at coordinates (500, 1000, 0) and the goal point is at coordinates (5700, 1200). Please note that the coordinates should be within the dimensions of your obstacle map.
 
 
 
@@ -55,7 +57,6 @@ In this example, the start point is at coordinates (50, 50, 0) and the goal poin
 ## Customization
 
 - You can modify the obstacle map by changing the dimensions, adding or removing obstacles, or adjusting their properties (shape, color, thickness, transparency).
-- The visualization of explored nodes can be customized by changing the `explored_interval` variable to control the frequency of updates.
 
 
 
